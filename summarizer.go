@@ -1,10 +1,24 @@
 package goSummarizer
 
-import "fmt"
 import "goSummarizer/helpers"
+import "fmt"
 
 func Summarize(text string) {
-	fmt.Println(text)
+	// Build the sentences dictionary
+	var sentencesDictionary = helpers.GetSentencesRanks(text)
+
+	// Build the summary with the sentences dictionary
+	var summary = helpers.GetSummary(text, sentencesDictionary)
+	fmt.Println(summary)
+
+	// // Print the summary
+	// fmt.Println("summary is\n", summary)
+
+	// // Print the ratio between the summary length and the original length
+	// fmt.Println("")
+	// fmt.Println("Original Length: ", len(text))
+	// fmt.Println("Summary Length: ", len(summary))
+	// fmt.Println("Summary Ratio: ", (100 - (100 * (len(summary) / len(text)))))
 }
 
 func SummarizeFromURL(url string) {
