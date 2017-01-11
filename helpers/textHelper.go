@@ -99,6 +99,7 @@ func GetSentencesRanks(content string) map[string]float32 {
 	var values = [][]float32{}
 
 	for i := 0; i < sentencesCount; i++ {
+
 		values = append(values, []float32{})
 		for j := 0; j < sentencesCount; j++ {
 			values[i] = append(values[i], sentencesIntersectedWordsCount(sentences[i], sentences[j]))

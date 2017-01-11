@@ -180,7 +180,6 @@ func getTextFromHTML(htmlString string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	removeNodesFromNode(bn, "script")
 	removeNodesFromNode(bn, "style")
 
