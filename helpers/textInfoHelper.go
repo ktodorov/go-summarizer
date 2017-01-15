@@ -5,6 +5,7 @@ import (
 	"strconv"
 )
 
+// GetSummaryInfo Returns summary information statistics for the original text and summarized text
 func GetSummaryInfo(originalText string, summarizedText string) string {
 	// Print the ratio between the summary length and the original length
 	var summaryInfo bytes.Buffer

@@ -86,11 +86,7 @@ func formatSentence(sentence string) string {
 	return replacedSentence
 }
 
-// Convert the content into a dictionary <K, V>
-// k = The formatted sentence
-// V = The rank of the sentence
-func GetSentencesRanks(content string) map[string]float32 {
-
+func getSentencesRanks(content string) map[string]float32 {
 	// Split the content into sentences
 	var sentences = getContentSentences(content)
 
@@ -150,8 +146,10 @@ func getBestSentence(paragraph string, sentencesDictionary map[string]float32) s
 	return bestSentence
 }
 
-// Build the summary
-func GetSummary(content string, sentencesDictionary map[string]float32) string {
+// GetSummary builds the summary from the given content text
+func GetSummary(content string) string {
+	// Build the sentences dictionary
+	var sentencesDictionary = getSentencesRanks(content)
 
 	// Split the content into paragraphs
 	var paragraphs = getContentParagraphs(content)

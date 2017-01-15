@@ -5,6 +5,7 @@ import (
 	"goSummarizer/helpers"
 )
 
+// Summarizer instance, used for extracting summary from raw texts and urls
 type Summarizer struct {
 	url            string
 	fullText       string
@@ -12,18 +13,21 @@ type Summarizer struct {
 	summarized     bool
 }
 
-func CreateFromUrl(url string) *Summarizer {
+// CreateFromURL creates summarizer instance, using the url parameter for summarizing
+func CreateFromURL(url string) *Summarizer {
 	var summarizer = new(Summarizer)
 	summarizer.url = url
 	return summarizer
 }
 
+// CreateFromText creates summarizer instance, using the text parameter for summarizing
 func CreateFromText(text string) *Summarizer {
 	var summarizer = new(Summarizer)
 	summarizer.fullText = text
 	return summarizer
 }
 
+// Summarize returns summary of the text, extracted from the url or the saved text
 func (s *Summarizer) Summarize() (string, error) {
 	if s.IsSummarized() {
 		return s.summarizedText, nil
@@ -50,14 +54,12 @@ func (s *Summarizer) Summarize() (string, error) {
 }
 
 func (s *Summarizer) summarizeFromText() string {
-	// Build the sentences dictionary
-	var sentencesDictionary = helpers.GetSentencesRanks(s.fullText)
 	// Build the summary with the sentences dictionary
-	var summary = helpers.GetSummary(s.fullText, sentencesDictionary)
-
+	var summary = helpers.GetSummary(s.fullText)
 	return summary
 }
 
+// GetSummaryInfo returns summary information statistics if the text is summarized and an error if not
 func (s *Summarizer) GetSummaryInfo() (string, error) {
 	if !s.IsSummarized() {
 		return "", errors.New("You must first summarize the text in order to get information for it")
@@ -67,8 +69,19 @@ func (s *Summarizer) GetSummaryInfo() (string, error) {
 	return summaryInfo, nil
 }
 
+// IsSummarized checks if the instance was already summarized
 func (s *Summarizer) IsSummarized() bool {
 	return s.summarized
+}
+
+// StoreToFile stores the summarized text to the file from the given path
+func (s *Summarizer) StoreToFile(filePath string) (bool, error) {
+	if !s.IsSummarized() {
+		return false, errors.New("You must first summarize the text in order to save the summary to a file")
+	}
+
+	stored, err := helpers.StoreTextToFile(filePath, s.summarizedText)
+	return stored, err
 }
 
 // func StartListening() {

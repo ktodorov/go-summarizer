@@ -7,11 +7,13 @@ import (
 	"strings"
 )
 
+// IsPositiveAnswer checks if the user has answered positively
 func IsPositiveAnswer(answer string) bool {
 	var isPositive = (answer == "y" || answer == "Y")
 	return isPositive
 }
 
+// ReadInputFromUser reads the entered message, trims it and returns it
 func ReadInputFromUser(message string) string {
 	reader := bufio.NewReader(os.Stdin)
 	if message != "" {
