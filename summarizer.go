@@ -9,6 +9,7 @@ type Summarizer struct {
 	url            string
 	fullText       string
 	summarizedText string
+	summarized     bool
 }
 
 func CreateFromUrl(url string) *Summarizer {
@@ -24,7 +25,7 @@ func CreateFromText(text string) *Summarizer {
 }
 
 func (s *Summarizer) Summarize() (string, error) {
-	if s.summarizedText != "" {
+	if s.IsSummarized() {
 		return s.summarizedText, nil
 	}
 
@@ -44,16 +45,8 @@ func (s *Summarizer) Summarize() (string, error) {
 		s.summarizedText = s.summarizeFromText()
 	}
 
+	s.summarized = true
 	return s.summarizedText, nil
-
-	// // Print the summary
-	// fmt.Println("summary is\n", summary)
-
-	// // Print the ratio between the summary length and the original length
-	// fmt.Println("")
-	// fmt.Println("Original Length: ", len(text))
-	// fmt.Println("Summary Length: ", len(summary))
-	// fmt.Println("Summary Ratio: ", (100 - (100 * (len(summary) / len(text)))))
 }
 
 func (s *Summarizer) summarizeFromText() string {
@@ -63,6 +56,19 @@ func (s *Summarizer) summarizeFromText() string {
 	var summary = helpers.GetSummary(s.fullText, sentencesDictionary)
 
 	return summary
+}
+
+func (s *Summarizer) GetSummaryInfo() (string, error) {
+	if !s.IsSummarized() {
+		return "", errors.New("You must first summarize the text in order to get information for it")
+	}
+
+	var summaryInfo = helpers.GetSummaryInfo(s.fullText, s.summarizedText)
+	return summaryInfo, nil
+}
+
+func (s *Summarizer) IsSummarized() bool {
+	return s.summarized
 }
 
 // func StartListening() {
