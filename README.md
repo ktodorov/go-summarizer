@@ -30,9 +30,9 @@ This is a Go library for summarizing text and websites and optionally saving the
 	fmt.Println(summary)
 
 Output:
->The launch also resulted in a successful recovery of the Falcon 9 rocket’s first stage, which marks the seventh time SpaceX has succeed in landing this stage back for potential later re-use
->SpaceX also had to push back its timelines for test launches of its Dragon crew capsule as a result of the September incident
->All satellites were successfully deployed as of 11:13 AM PT / 2:12 PM PT, signalling a successful mission for the space company’s first flight back.
+>The launch also resulted in a successful recovery of the Falcon 9 rocket’s first stage, which marks the seventh time SpaceX has succeed in landing this stage back for potential later re-use<br/>
+>SpaceX also had to push back its timelines for test launches of its Dragon crew capsule as a result of the September incident<br/>
+>All satellites were successfully deployed as of 11:13 AM PT / 2:12 PM PT, signalling a successful mission for the space company’s first flight back.<br/>
 
 ### GetSummaryInfo
     var s = CreateFromText("test")
@@ -45,10 +45,10 @@ Output:
 	fmt.Println(summaryInfo)
 
 Output:
->Summary info:
-> \- Original length: 4
-> \- Summary length:  0
-> \- Summary ratio:   100
+>Summary info:<br/>
+> \- Original length: 4<br/>
+> \- Summary length:  0<br/>
+> \- Summary ratio:   100<br/>
 
 ### IsSummarized
     var s = CreateFromText("test")
@@ -57,8 +57,8 @@ Output:
 	fmt.Println("After summarizing: ", s.IsSummarized())
 
 Output:
-> Before summarizing: false
-> After summarizing: true
+> Before summarizing: false<br/>
+> After summarizing: true<br/>
 
 ### StoreToFile
     var s = CreateFromText("test")
