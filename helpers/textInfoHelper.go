@@ -16,9 +16,9 @@ func GetSummaryInfo(originalText string, summarizedText string) string {
 	var summarizedTextLength = len(summarizedText)
 	var ratio = (100 - (100 * (summarizedTextLength / originalTextLength)))
 
-	appendLine(&summaryInfo, " - Original Length: ", strconv.Itoa(originalTextLength))
-	appendLine(&summaryInfo, " - Summary Length:  ", strconv.Itoa(summarizedTextLength))
-	appendLine(&summaryInfo, " - Summary Ratio:   ", strconv.Itoa(ratio))
+	appendLine(&summaryInfo, " - Original length: ", strconv.Itoa(originalTextLength))
+	appendLine(&summaryInfo, " - Summary length:  ", strconv.Itoa(summarizedTextLength))
+	appendLine(&summaryInfo, " - Summary ratio:   ", strconv.Itoa(ratio))
 
 	var summaryInfoString = summaryInfo.String()
 	return summaryInfoString
