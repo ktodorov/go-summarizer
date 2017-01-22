@@ -30,7 +30,7 @@ Crewed mission capabilities will help SpaceX expand its ability to serve contrac
 	var s = CreateFromText(customNewsStory)
 	summary, err := s.Summarize()
 	if err != nil {
-		fmt.Println("Error occured: ", err.Error())
+		fmt.Println("Error occurred: ", err.Error())
 	}
 
 	fmt.Println(summary)
@@ -45,7 +45,7 @@ func ExampleSummarizer_Summarize_second() {
 	var s = CreateFromURL(customNewsStoryURL)
 	summary, err := s.Summarize()
 	if err != nil {
-		fmt.Println("Error occured: ", err.Error())
+		fmt.Println("Error occurred: ", err.Error())
 	}
 
 	fmt.Println(summary)
@@ -59,7 +59,7 @@ func ExampleSummarizer_GetSummaryInfo() {
 	s.Summarize()
 	summaryInfo, err := s.GetSummaryInfo()
 	if err != nil {
-		fmt.Println("Error occured: ", err.Error())
+		fmt.Println("Error occurred: ", err.Error())
 	}
 
 	fmt.Println(summaryInfo)
@@ -87,7 +87,7 @@ func ExampleSummarizer_StoreToFile() {
 	s.Summarize()
 	stored, err := s.StoreToFile("some/path/to/file.txt")
 	if err != nil {
-		fmt.Println("Error occured: ", err.Error())
+		fmt.Println("Error occurred: ", err.Error())
 	}
 
 	fmt.Println(stored)

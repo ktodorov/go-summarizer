@@ -23,7 +23,7 @@ This is a Go library for summarizing text and websites and optionally saving the
     var s = CreateFromURL(customNewsStoryURL)
 	summary, err := s.Summarize()
 	if err != nil {
-		fmt.Println("Error occured: ", err.Error())
+		fmt.Println("Error occurred: ", err.Error())
         return
 	}
 
@@ -39,7 +39,7 @@ Output:
 	s.Summarize()
 	summaryInfo, err := s.GetSummaryInfo()
 	if err != nil {
-		fmt.Println("Error occured: ", err.Error())
+		fmt.Println("Error occurred: ", err.Error())
 	}
 
 	fmt.Println(summaryInfo)
@@ -65,7 +65,7 @@ Output:
 	s.Summarize()
 	stored, err := s.StoreToFile("some/path/to/file.txt")
 	if err != nil {
-		fmt.Println("Error occured: ", err.Error())
+		fmt.Println("Error occurred: ", err.Error())
 	}
 
 	fmt.Println(stored)

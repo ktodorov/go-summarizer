@@ -5,5 +5,5 @@ import (
 )
 
 func logError(err error) {
-	fmt.Printf("Error occured: {%s}\n", err.Error())
+	fmt.Printf("Error occurred: {%s}\n", err.Error())
 }
