@@ -2,7 +2,7 @@ package goSummarizer
 
 import (
 	"errors"
-	"goSummarizer/helpers"
+	"goSummarizer/internal/helpers"
 )
 
 // Summarizer instance, used for extracting summary from raw texts and urls
