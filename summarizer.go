@@ -82,7 +82,7 @@ func (s *Summarizer) StoreToFile(filePath string) (bool, error) {
 		return false, errors.New("You must first summarize the text in order to save the summary to a file")
 	}
 
-	stored, err := helpers.StoreTextToFile(filePath, s.summarizedText)
+	stored, err := helpers.StoreTextToFile(filePath, s.summarizedText, s.images)
 	return stored, err
 }
 
