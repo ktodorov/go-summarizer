@@ -10,6 +10,7 @@ type Summarizer struct {
 	url            string
 	fullText       string
 	summarizedText string
+	images         []string
 	summarized     bool
 }
 
@@ -40,12 +41,13 @@ func (s *Summarizer) Summarize() (string, error) {
 	if s.fullText != "" {
 		s.summarizedText = s.summarizeFromText()
 	} else if s.url != "" {
-		extractedText, err := helpers.ExtractMainTextFromURL(s.url)
+		extractedText, extractedImages, err := helpers.ExtractMainInfoFromURL(s.url)
 		if err != nil {
 			return "", err
 		}
 
 		s.fullText = extractedText
+		s.images = extractedImages
 		s.summarizedText = s.summarizeFromText()
 	}
 

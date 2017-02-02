@@ -27,7 +27,7 @@ func getAttribute(node *html.Node, attributeName string) (attributeValue string,
 	return "", false
 }
 
-func getMainContentFromHTML(node *html.Node) string {
+func getMainContentFromHTML(node *html.Node) (mainText string, images []string) {
 	var pNodes = extractNodes(node, "p")
 	var parents = make(map[*html.Node]int)
 
@@ -73,18 +73,28 @@ func getMainContentFromHTML(node *html.Node) string {
 	}
 
 	if maxNode == nil {
-		return ""
+		return "", nil
 	}
 
 	var textNodes = extractNodes(maxNode, "p")
-	var maxNodeText = ""
+	mainText = ""
 
 	for _, textNode := range textNodes {
 		var nodeText = extractTextFromNode(textNode)
-		maxNodeText += "\n" + nodeText
+		mainText += "\n" + nodeText
 	}
 
-	return maxNodeText
+	images = []string{}
+
+	var imageNodes = extractNodes(maxNode, "img")
+	for _, imageNode := range imageNodes {
+		var imageSource, found = getAttribute(imageNode, "src")
+		if found {
+			images = append(images, imageSource)
+		}
+	}
+
+	return mainText, images
 }
 
 func extractNodes(node *html.Node, tag string) []*html.Node {
@@ -174,16 +184,16 @@ func renderNode(node *html.Node) string {
 	return nodeText
 }
 
-func getTextFromHTML(htmlString string) (string, error) {
+func getMainInfoFromHTML(htmlString string) (string, []string, error) {
 	doc, _ := html.Parse(strings.NewReader(htmlString))
 	bn, err := extractNode(doc, "body")
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	removeNodesFromNode(bn, "script")
 	removeNodesFromNode(bn, "style")
 
-	var mainText = getMainContentFromHTML(bn)
+	var mainText, mainImages = getMainContentFromHTML(bn)
 
-	return mainText, nil
+	return mainText, mainImages, nil
 }
