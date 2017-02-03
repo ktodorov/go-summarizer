@@ -3,7 +3,6 @@ package helpers
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 )
@@ -27,28 +26,25 @@ func readFromReader(reader io.Reader) ([]byte, error) {
 	return resultBytes, nil
 }
 
-func saveImageFromURL(imageUrl string) (string, error) {
+func saveImageFromURL(imageURL string, imagePath string) error {
 	// don't worry about errors
-	response, e := http.Get(imageUrl)
+	response, e := http.Get(imageURL)
 	if e != nil {
-		log.Fatal(e)
+		return e
 	}
-
 	defer response.Body.Close()
 
-	var filePath = "E:\\tmp\\asdf.jpg"
-
 	//open a file for writing
-	file, err := os.Create(filePath)
+	file, err := os.Create(imagePath)
 	if err != nil {
-		return "", err
+		return err
 	}
 	// Use io.Copy to just dump the response body to the file. This supports huge files
 	_, err = io.Copy(file, response.Body)
 	if err != nil {
-		return "", err
+		return err
 	}
-	file.Close()
+	defer file.Close()
 
-	return filePath, nil
+	return nil
 }
