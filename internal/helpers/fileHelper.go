@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/signintech/gopdf"
+	"github.com/signintech/gopdf/fontmaker/core"
 )
 
 var supportedFileTypes = []string{"txt", "pdf"}
@@ -128,21 +129,22 @@ func saveToPDFFile(path string, text []byte, imageURLs []string) (bool, error) {
 		return false, err
 	}
 
-	var fontsPath = abspath + "/fonts/OpenSans-Regular.ttf"
-
-	err = pdf.AddTTFFont("OpenSans-Regular", fontsPath)
+	var fontPath = abspath + "/fonts/OpenSans-Regular.ttf"
+	var fontSize = 12
+	err = pdf.AddTTFFont("OpenSans-Regular", fontPath)
 
 	if err != nil {
 		return false, err
 	}
 
-	err = pdf.SetFont("OpenSans-Regular", "", 12)
+	err = pdf.SetFont("OpenSans-Regular", "", fontSize)
 	if err != nil {
 		return false, err
 	}
 
 	var imagePaths = []string{}
 	var heightUsed = 0.0
+
 	for _, imageURL := range imageURLs {
 		var imageExtension, isImage = getFileExtensionFromURL(imageURL)
 		if !isImage {
@@ -180,18 +182,111 @@ func saveToPDFFile(path string, text []byte, imageURLs []string) (bool, error) {
 		imagePaths = append(imagePaths, imagePath)
 	}
 
-	pdf.SetX(5) //move current location
-	pdf.SetY(heightUsed + 5)
-	pdf.Cell(nil, string(text)) //print text
-	pdf.WritePdf(path)
+	textHeight, err := calculateTextHeight(fontPath, fontSize)
+	if err != nil {
+		return false, err
+	}
+	textHeight += 4
 
+	err = writePdfText(&pdf, 5, heightUsed+5, string(text), pageSizeWidth, pageSizeHeight, textHeight)
+	if err != nil {
+		return false, err
+	}
+
+	pdf.WritePdf(path)
 	deleteFiles(imagePaths) // delete temporary created images
 
 	return true, nil
 }
 
-func deleteFiles(filePaths []string) {
+func calculateTextHeight(fontPath string, fontSize int) (float64, error) {
+	var parser core.TTFParser
+	var err = parser.Parse(fontPath)
+	if err != nil {
+		return 0, err
+	}
 
+	//Measure Height
+	//get  CapHeight (https://en.wikipedia.org/wiki/Cap_height)
+	cap := float64(float64(parser.CapHeight()) * 1000.00 / float64(parser.UnitsPerEm()))
+	//convert
+	realHeight := cap * (float64(fontSize) / 1000.0)
+
+	return realHeight, nil
+}
+
+func writePdfText(pdf *gopdf.GoPdf, startX float64, startY float64, text string, pageSizeWidth float64, pageSizeHeight float64, textHeight float64) error {
+	var textWords = strings.Split(text, " ")
+	var currentLineText = ""
+	var currentLine = 1.0
+
+	for _, word := range textWords {
+		var wordToUse = word
+		var newLineWord = ""
+		// If there is new line in the current word, then we have something like word1\nword2
+		// Then we split the line after the first word and write the second on the new line
+		if strings.Contains(word, "\n") {
+			var wordsByLines = strings.Split(word, "\n")
+			wordToUse = wordsByLines[0]
+			if len(wordsByLines) > 1 {
+				newLineWord = wordsByLines[1]
+			}
+		}
+
+		var tempLineText = currentLineText + " " + wordToUse
+		var textWidth, err = pdf.MeasureTextWidth(tempLineText)
+		if err != nil {
+			return err
+		}
+
+		// This means that if we add the current word,
+		// the text on the current line will move out of the page,
+		// so we add the current word to a new line and write the current line on the pdf
+		if textWidth > pageSizeWidth-15 {
+			currentLine, startY = writeTextLine(pdf, startX, startY, textHeight, currentLine, currentLineText, pageSizeHeight, false)
+			currentLineText = wordToUse
+		} else {
+			currentLineText = tempLineText
+		}
+
+		// This means that we split the current word and after the first, we must move to new line
+		if newLineWord != "" {
+			currentLine, startY = writeTextLine(pdf, startX, startY, textHeight, currentLine, currentLineText, pageSizeHeight, true)
+			currentLineText = newLineWord
+		}
+	}
+
+	pdf.SetX(startX)
+	pdf.SetY(startY + (textHeight * currentLine))
+	pdf.Cell(nil, currentLineText)
+	return nil
+}
+
+func writeTextLine(pdf *gopdf.GoPdf, startX float64, startY float64, textHeight float64, currentLine float64, text string, pageSizeHeight float64, newParagraph bool) (newCurrentLine float64, newStartY float64) {
+	pdf.SetX(startX)
+	var currentHeight = startY + (textHeight * currentLine)
+	if currentHeight+textHeight > pageSizeHeight {
+		pdf.AddPage()
+		currentHeight = 5
+		currentLine = 1
+		startY = 5
+	} else {
+		currentLine++
+		if newParagraph {
+			currentLine++
+		}
+	}
+	pdf.SetY(currentHeight)
+	pdf.Cell(nil, text)
+
+	if newParagraph {
+		pdf.Br(textHeight)
+	}
+
+	return currentLine, startY
+}
+
+func deleteFiles(filePaths []string) {
 	for _, filePath := range filePaths {
 		if fileExists(filePath) {
 			os.Remove(filePath)
