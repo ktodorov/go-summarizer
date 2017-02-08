@@ -207,17 +207,62 @@ func renderNode(node *html.Node) string {
 	return nodeText
 }
 
-func getMainInfoFromHTML(htmlString string) (string, []string, error) {
+func getPageTitle(node *html.Node) string {
+	var titleNodes = extractNodes(node, "title")
+	var title = ""
+	if len(titleNodes) > 0 {
+		title = extractTextFromNode(titleNodes[0])
+	}
+
+	var originalTitle = title
+
+	// We check if there is header equal to document title
+	// If it is the same, then this is most likely the article title
+	var headerNodes = extractNodes(node, "h1")
+	var header2Nodes = extractNodes(node, "h2")
+	headerNodes = append(headerNodes, header2Nodes...)
+
+	if len(headerNodes) > 0 {
+		for _, headerNode := range headerNodes {
+			var headerText = extractTextFromNode(headerNode)
+			if headerText == title {
+				return headerText
+			}
+		}
+	}
+
+	if strings.Contains(originalTitle, ":") {
+		var splitTitle = strings.Split(originalTitle, ":")
+		if len(splitTitle) > 0 {
+			title = splitTitle[len(splitTitle)-1]   // last title part
+			if len(strings.Split(title, " ")) < 3 { // if the new title is too short
+				title = originalTitle
+			}
+		}
+	} else if len(originalTitle) < 15 || len(originalTitle) > 150 {
+		// If the original title is too big or too small, we get the first header
+		var firstHeaders = extractNodes(node, "h1")
+		if len(firstHeaders) == 1 {
+			title = extractTextFromNode(firstHeaders[0])
+		}
+	}
+
+	title = strings.TrimSpace(title)
+	return title
+}
+
+func getMainInfoFromHTML(htmlString string) (string, string, []string, error) {
 	doc, _ := html.Parse(strings.NewReader(htmlString))
 	bn, err := extractNode(doc, "body")
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 	removeNodesFromNode(bn, "script")
 	removeNodesFromNode(bn, "style")
 	removeNodesFromNode(bn, "form")
 
 	var mainText, mainImages = getMainContentFromHTML(bn)
+	var title = getPageTitle(bn)
 
-	return mainText, mainImages, nil
+	return title, mainText, mainImages, nil
 }

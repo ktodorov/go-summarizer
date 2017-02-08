@@ -8,6 +8,7 @@ import (
 // Summarizer instance, used for extracting summary from raw texts and urls
 type Summarizer struct {
 	url            string
+	title          string
 	fullText       string
 	summarizedText string
 	images         []string
@@ -39,13 +40,7 @@ func (s *Summarizer) Summarize() (string, error) {
 	}
 
 	if s.url != "" {
-		extractedText, extractedImages, err := helpers.ExtractMainInfoFromURL(s.url)
-		if err != nil {
-			return "", err
-		}
-
-		s.fullText = extractedText
-		s.images = extractedImages
+		s.GetMainTextFromURL()
 	}
 
 	var summarizedText = s.summarizeFromText()
@@ -56,6 +51,29 @@ func (s *Summarizer) Summarize() (string, error) {
 	s.summarizedText = summarizedText
 	s.summarized = true
 	return s.summarizedText, nil
+}
+
+// GetMainTextFromURL parses the summarizer object URL property and returns the main text
+// from the website without ads, unnecessary images and other not important data
+func (s *Summarizer) GetMainTextFromURL() (string, error) {
+	if s.url == "" {
+		return "", errors.New("You must use summarizer from URL")
+	}
+
+	if s.fullText != "" {
+		return s.fullText, nil
+	}
+
+	extractedTitle, extractedText, extractedImages, err := helpers.ExtractMainInfoFromURL(s.url)
+	if err != nil {
+		return "", err
+	}
+
+	s.title = extractedTitle
+	s.fullText = extractedText
+	s.images = extractedImages
+
+	return extractedTitle + "\n\n" + extractedText, nil
 }
 
 func (s *Summarizer) summarizeFromText() string {
@@ -85,7 +103,7 @@ func (s *Summarizer) StoreToFile(filePath string) (bool, error) {
 		return false, errors.New("You must first summarize the text in order to save the summary to a file")
 	}
 
-	stored, err := helpers.StoreTextToFile(filePath, s.summarizedText, s.images)
+	stored, err := helpers.StoreTextToFile(filePath, s.title, s.summarizedText, s.images)
 	return stored, err
 }
 

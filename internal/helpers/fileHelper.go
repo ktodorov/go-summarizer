@@ -94,16 +94,17 @@ func getFileExtensionFromURL(url string) (string, bool) {
 }
 
 //StoreTextToFile stores text to the given file path. Creates the file if it's missing or appends to it
-func StoreTextToFile(path string, text string, images []string) (bool, error) {
+func StoreTextToFile(path string, title string, text string, images []string) (bool, error) {
 	var fileType = getFileType(path)
+	var titleAsBytes = []byte(title)
 	var textAsBytes = []byte(text)
 	var result = false
 	var err error
 
 	if fileType == "txt" {
-		result, err = saveToTextFile(path, textAsBytes)
+		result, err = saveToTextFile(path, titleAsBytes, textAsBytes)
 	} else if fileType == "pdf" {
-		result, err = saveToPDFFile(path, textAsBytes, images)
+		result, err = saveToPDFFile(path, titleAsBytes, textAsBytes, images)
 	} else {
 		err = errors.New("Invalid file type")
 	}
@@ -111,13 +112,18 @@ func StoreTextToFile(path string, text string, images []string) (bool, error) {
 	return result, err
 }
 
-func saveToTextFile(path string, text []byte) (bool, error) {
-	err := ioutil.WriteFile(path, text, 0644)
+func saveToTextFile(path string, title []byte, text []byte) (bool, error) {
+	err := ioutil.WriteFile(path, title, 0644)
+	if err != nil {
+		return false, err
+	}
+
+	err = ioutil.WriteFile(path, text, 0644)
 	var result = (err == nil)
 	return result, err
 }
 
-func saveToPDFFile(path string, text []byte, imageURLs []string) (bool, error) {
+func saveToPDFFile(path string, title []byte, text []byte, imageURLs []string) (bool, error) {
 	pdf := gopdf.GoPdf{}
 	var pageSizeHeight = 841.89
 	var pageSizeWidth = 595.28
@@ -144,6 +150,23 @@ func saveToPDFFile(path string, text []byte, imageURLs []string) (bool, error) {
 
 	var imagePaths = []string{}
 	var heightUsed = 0.0
+
+	fontSize = 16
+	err = pdf.SetFont("OpenSans-Regular", "", fontSize)
+	if err != nil {
+		return false, err
+	}
+
+	titleHeight, err := calculateTextHeight(fontPath, fontSize)
+	if err != nil {
+		return false, err
+	}
+
+	var titleString = string(title)
+	if titleString != "" {
+		heightUsed, err = writePdfText(&pdf, 5, 0, titleString, pageSizeWidth, pageSizeHeight, titleHeight)
+		heightUsed += 10 // add padding between header and rest of body
+	}
 
 	for _, imageURL := range imageURLs {
 		var imageExtension, isImage = getFileExtensionFromURL(imageURL)
@@ -182,13 +205,19 @@ func saveToPDFFile(path string, text []byte, imageURLs []string) (bool, error) {
 		imagePaths = append(imagePaths, imagePath)
 	}
 
+	fontSize = 12
+	err = pdf.SetFont("OpenSans-Regular", "", fontSize)
+	if err != nil {
+		return false, err
+	}
+
 	textHeight, err := calculateTextHeight(fontPath, fontSize)
 	if err != nil {
 		return false, err
 	}
 	textHeight += 4
 
-	err = writePdfText(&pdf, 5, heightUsed+5, string(text), pageSizeWidth, pageSizeHeight, textHeight)
+	_, err = writePdfText(&pdf, 5, heightUsed+titleHeight+5, string(text), pageSizeWidth, pageSizeHeight, textHeight)
 	if err != nil {
 		return false, err
 	}
@@ -215,7 +244,7 @@ func calculateTextHeight(fontPath string, fontSize int) (float64, error) {
 	return realHeight, nil
 }
 
-func writePdfText(pdf *gopdf.GoPdf, startX float64, startY float64, text string, pageSizeWidth float64, pageSizeHeight float64, textHeight float64) error {
+func writePdfText(pdf *gopdf.GoPdf, startX float64, startY float64, text string, pageSizeWidth float64, pageSizeHeight float64, textHeight float64) (float64, error) {
 	var textWords = strings.Split(text, " ")
 	var currentLineText = ""
 	var currentLine = 1.0
@@ -236,7 +265,7 @@ func writePdfText(pdf *gopdf.GoPdf, startX float64, startY float64, text string,
 		var tempLineText = currentLineText + " " + wordToUse
 		var textWidth, err = pdf.MeasureTextWidth(tempLineText)
 		if err != nil {
-			return err
+			return 0, err
 		}
 
 		// This means that if we add the current word,
@@ -256,10 +285,15 @@ func writePdfText(pdf *gopdf.GoPdf, startX float64, startY float64, text string,
 		}
 	}
 
+	var heightUsed = startY + (textHeight * currentLine)
 	pdf.SetX(startX)
-	pdf.SetY(startY + (textHeight * currentLine))
+	pdf.SetY(heightUsed)
 	pdf.Cell(nil, currentLineText)
-	return nil
+
+	heightUsed += textHeight
+	pdf.Br(textHeight)
+
+	return heightUsed, nil
 }
 
 func writeTextLine(pdf *gopdf.GoPdf, startX float64, startY float64, textHeight float64, currentLine float64, text string, pageSizeHeight float64, newParagraph bool) (newCurrentLine float64, newStartY float64) {

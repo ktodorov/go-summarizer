@@ -20,20 +20,20 @@ func getHTMLFromURL(url string) (string, error) {
 }
 
 // ExtractMainInfoFromURL searches the main content from the given url and returns the text and images
-func ExtractMainInfoFromURL(url string) (string, []string, error) {
+func ExtractMainInfoFromURL(url string) (string, string, []string, error) {
 	var htmlString, err = getHTMLFromURL(url)
 	if err != nil {
 		logError(err)
-		return "", nil, err
+		return "", "", nil, err
 	}
 
-	textFromHTML, imagesFromHTML, err := getMainInfoFromHTML(htmlString)
+	titleFromHTML, textFromHTML, imagesFromHTML, err := getMainInfoFromHTML(htmlString)
 	if err != nil {
 		logError(err)
-		return "", nil, err
+		return "", "", nil, err
 	}
 
-	return textFromHTML, imagesFromHTML, nil
+	return titleFromHTML, textFromHTML, imagesFromHTML, nil
 }
 
 // IsURL checks if the given text is a website url address
