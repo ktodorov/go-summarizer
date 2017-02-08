@@ -11,8 +11,8 @@ import (
 	"golang.org/x/net/html"
 )
 
-var negative, _ = regexp.Compile(".*comment.*|.*meta.*|.*footer.*|.*foot.*|.*cloud.*|.*head.*")
-var positive, _ = regexp.Compile(".*post.*|.*hentry.*|.*entry.*|.*content.*|.*text.*|.*body.*")
+var negative, _ = regexp.Compile("/hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|modal|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|tool|widget/i,")
+var positive, _ = regexp.Compile("/article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story/i")
 
 func getAttribute(node *html.Node, attributeName string) (attributeValue string, found bool) {
 	var attributes = node.Attr
@@ -29,12 +29,18 @@ func getAttribute(node *html.Node, attributeName string) (attributeValue string,
 
 func getMainContentFromHTML(node *html.Node) (mainText string, images []string) {
 	var pNodes = extractNodes(node, "p")
-	var parents = make(map[*html.Node]int)
+	var parents = make(map[*html.Node]float64)
 
 	for _, pNode := range pNodes {
 		var nodeParent = pNode.Parent
+		var nodeGrandParent = nodeParent.Parent
+
 		if _, exists := parents[nodeParent]; !exists {
 			parents[nodeParent] = 0
+		}
+
+		if _, exists := parents[nodeGrandParent]; !exists {
+			parents[nodeGrandParent] = 0
 		}
 
 		// Examine class attribute
@@ -42,8 +48,10 @@ func getMainContentFromHTML(node *html.Node) (mainText string, images []string) 
 		if found {
 			if negative.MatchString(class) {
 				parents[nodeParent] -= 50
+				parents[nodeGrandParent] -= 25
 			} else if positive.MatchString(class) {
 				parents[nodeParent] += 25
+				parents[nodeGrandParent] += 12.5
 			}
 		}
 
@@ -52,8 +60,10 @@ func getMainContentFromHTML(node *html.Node) (mainText string, images []string) 
 		if found {
 			if negative.MatchString(id) {
 				parents[nodeParent] -= 50
+				parents[nodeGrandParent] -= 25
 			} else if positive.MatchString(id) {
 				parents[nodeParent] += 25
+				parents[nodeGrandParent] += 12.5
 			}
 		}
 
@@ -63,20 +73,22 @@ func getMainContentFromHTML(node *html.Node) (mainText string, images []string) 
 		}
 	}
 
-	var maxValue = 0
-	var maxNode *html.Node
+	var maxValue = 0.0
+	var maxNodes []*html.Node
 
 	for key, value := range parents {
 		if value > maxValue {
-			maxNode = key
+			maxNodes = []*html.Node{key}
+		} else if value == maxValue {
+			maxNodes = append(maxNodes, key)
 		}
 	}
 
-	if maxNode == nil {
+	if maxNodes == nil || len(maxNodes) == 0 {
 		return "", nil
 	}
 
-	var textNodes = extractNodes(maxNode, "p")
+	var textNodes = extractNodesFromMultipleParents(maxNodes, "p")
 	mainText = ""
 
 	for _, textNode := range textNodes {
@@ -86,7 +98,7 @@ func getMainContentFromHTML(node *html.Node) (mainText string, images []string) 
 
 	images = []string{}
 
-	var imageNodes = extractNodes(maxNode, "img")
+	var imageNodes = extractNodesFromMultipleParents(maxNodes, "img")
 	for _, imageNode := range imageNodes {
 		var imageSource, found = getAttribute(imageNode, "src")
 		if found {
@@ -95,6 +107,17 @@ func getMainContentFromHTML(node *html.Node) (mainText string, images []string) 
 	}
 
 	return mainText, images
+}
+
+func extractNodesFromMultipleParents(nodes []*html.Node, tag string) []*html.Node {
+	var allNodes = []*html.Node{}
+
+	for _, node := range nodes {
+		var currentNodes = extractNodes(node, tag)
+		allNodes = append(allNodes, currentNodes...)
+	}
+
+	return allNodes
 }
 
 func extractNodes(node *html.Node, tag string) []*html.Node {
@@ -192,6 +215,7 @@ func getMainInfoFromHTML(htmlString string) (string, []string, error) {
 	}
 	removeNodesFromNode(bn, "script")
 	removeNodesFromNode(bn, "style")
+	removeNodesFromNode(bn, "form")
 
 	var mainText, mainImages = getMainContentFromHTML(bn)
 
