@@ -38,9 +38,7 @@ func (s *Summarizer) Summarize() (string, error) {
 		return "", errors.New("You must submit text or url for summarizing")
 	}
 
-	if s.fullText != "" {
-		s.summarizedText = s.summarizeFromText()
-	} else if s.url != "" {
+	if s.url != "" {
 		extractedText, extractedImages, err := helpers.ExtractMainInfoFromURL(s.url)
 		if err != nil {
 			return "", err
@@ -48,9 +46,14 @@ func (s *Summarizer) Summarize() (string, error) {
 
 		s.fullText = extractedText
 		s.images = extractedImages
-		s.summarizedText = s.summarizeFromText()
 	}
 
+	var summarizedText = s.summarizeFromText()
+	if len(summarizedText) == 0 {
+		return "", errors.New("Something happened while summarizing. Please try again")
+	}
+
+	s.summarizedText = summarizedText
 	s.summarized = true
 	return s.summarizedText, nil
 }
@@ -67,7 +70,7 @@ func (s *Summarizer) GetSummaryInfo() (string, error) {
 		return "", errors.New("You must first summarize the text in order to get information for it")
 	}
 
-	var summaryInfo = helpers.GetSummaryInfo(s.fullText, s.summarizedText)
+	var summaryInfo = helpers.GetSummaryInfo(s.fullText, s.summarizedText, len(s.images))
 	return summaryInfo, nil
 }
 
