@@ -251,6 +251,50 @@ func getPageTitle(node *html.Node) string {
 	return title
 }
 
+func replaceBrs(htmlBody *html.Node) (*html.Node, error) {
+	for true {
+		var brNode, _ = extractNode(htmlBody, "br")
+		if brNode == nil {
+			// If there are no more br nodes in the body, we exit
+			return htmlBody, nil
+		}
+
+		var replaced = false
+		for brNode.NextSibling.Data == "br" {
+			replaced = true
+			var brSibling = brNode.NextSibling
+			brSibling.Parent.RemoveChild(brNode)
+			brNode = brSibling
+		}
+
+		if replaced {
+			var p = html.Node{Data: "p"}
+			htmlBody.InsertBefore(&p, brNode)
+			htmlBody.RemoveChild(brNode)
+
+			var next = p.NextSibling
+			for next != nil {
+				// If we meet another <br><br> elements, we end the new p tag here
+				if next.Data == "br" {
+					var nextElem = next.NextSibling
+					if nextElem != nil && nextElem.Data == "br" {
+						break
+					}
+				}
+
+				// Add this element as child to the new p tag
+				var sibling = next.NextSibling
+				p.AppendChild(next)
+				next = sibling
+			}
+		} else {
+			brNode.Parent.RemoveChild(brNode)
+		}
+	}
+
+	return nil, errors.New("Error occured while parsing br nodes")
+}
+
 func getMainInfoFromHTML(htmlString string) (string, string, []string, error) {
 	doc, _ := html.Parse(strings.NewReader(htmlString))
 	bn, err := extractNode(doc, "body")
@@ -260,6 +304,11 @@ func getMainInfoFromHTML(htmlString string) (string, string, []string, error) {
 	removeNodesFromNode(bn, "script")
 	removeNodesFromNode(bn, "style")
 	removeNodesFromNode(bn, "form")
+
+	bn, err = replaceBrs(bn)
+	if err != nil {
+		return "", "", nil, err
+	}
 
 	var mainText, mainImages = getMainContentFromHTML(bn)
 	var title = getPageTitle(bn)
