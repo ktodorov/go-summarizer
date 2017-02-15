@@ -284,6 +284,7 @@ func replaceBrs(htmlBody *html.Node) (*html.Node, error) {
 
 				// Add this element as child to the new p tag
 				var sibling = next.NextSibling
+				next.Parent.RemoveChild(next)
 				p.AppendChild(next)
 				next = sibling
 			}
@@ -293,6 +294,49 @@ func replaceBrs(htmlBody *html.Node) (*html.Node, error) {
 	}
 
 	return nil, errors.New("Error occured while parsing br nodes")
+}
+
+func filterNodes(htmlBody *html.Node) *html.Node {
+	// All divs that contain only one p tag or contain only text are replaced with p tags
+	var divs = extractNodes(htmlBody, "div")
+
+	for _, div := range divs {
+		if div.FirstChild != nil && div.FirstChild.Type == html.TextNode && div.FirstChild.NextSibling == nil {
+			// Then there is only text in this div
+			var newParagraph = html.Node{}
+			newParagraph.Data = "p"
+			var copyParagraph = div.FirstChild
+			div.RemoveChild(copyParagraph)
+			newParagraph.AppendChild(copyParagraph)
+			div.Parent.InsertBefore(&newParagraph, div)
+			div.Parent.RemoveChild(div)
+		} else if div.FirstChild != nil && div.FirstChild.Data == "p" && div.FirstChild.NextSibling == nil {
+			// Then we have only one element of type p in this div
+			var copyParagraph = div.FirstChild
+			div.RemoveChild(copyParagraph)
+			div.Parent.InsertBefore(copyParagraph, div)
+			div.Parent.RemoveChild(div)
+		}
+	}
+
+	return htmlBody
+}
+
+func printHTML(node *html.Node) string {
+	var result = ""
+	var nodeData = node.Data
+	if node.Type == html.TextNode {
+		result = node.Data
+		return result
+	}
+
+	result = "<" + nodeData + ">"
+	for currentNode := node.FirstChild; currentNode != nil; currentNode = currentNode.NextSibling {
+		result += printHTML(currentNode)
+	}
+
+	result += "</" + nodeData + ">"
+	return result
 }
 
 func getMainInfoFromHTML(htmlString string) (string, string, []string, error) {
@@ -309,6 +353,8 @@ func getMainInfoFromHTML(htmlString string) (string, string, []string, error) {
 	if err != nil {
 		return "", "", nil, err
 	}
+
+	bn = filterNodes(bn)
 
 	var mainText, mainImages = getMainContentFromHTML(bn)
 	var title = getPageTitle(bn)
