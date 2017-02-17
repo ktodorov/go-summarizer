@@ -217,7 +217,7 @@ func writeTitleToPDF(pdf *gopdf.GoPdf, title string, heightUsed float64, fontSiz
 		return heightUsed, err
 	}
 
-	heightUsed, err = writeTextToPDF(pdf, 5, 0, title, pageSizeWidth, pageSizeHeight, titleHeight)
+	heightUsed, _ = writeTextToPDF(pdf, 5, 0, title, pageSizeWidth, pageSizeHeight, titleHeight)
 	heightUsed += 10 // add padding between header and rest of body
 
 	return heightUsed, nil

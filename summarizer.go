@@ -106,29 +106,3 @@ func (s *Summarizer) StoreToFile(filePath string) (bool, error) {
 	stored, err := helpers.StoreTextToFile(filePath, s.title, s.summarizedText, s.images)
 	return stored, err
 }
-
-// func StartListening() {
-// 	var text = helpers.ReadInputFromUser("Enter url or text for summarizing: ")
-// 	var isURL = helpers.IsURL(text)
-// 	var result = ""
-// 	if isURL {
-// 		result = SummarizeFromURL(text)
-// 	} else {
-// 		result = Summarize(text)
-// 	}
-
-// 	var answer = helpers.ReadInputFromUser("Do you want to store the summary to a file? (y/n)")
-// 	var isPositiveAnswer = helpers.IsPositiveAnswer(answer)
-// 	if !isPositiveAnswer {
-// 		fmt.Println("Goodbye.")
-// 		return
-// 	}
-
-// 	var path = helpers.ReadInputFromUser("Enter folder for storing the file: ")
-// 	var stored = helpers.StoreTextToFile(path, result)
-// 	if stored {
-// 		fmt.Println("File stored!")
-// 	} else {
-// 		fmt.Println("Something went wrong! Please try again")
-// 	}
-// }

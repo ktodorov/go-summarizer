@@ -44,28 +44,10 @@ func getMainContentFromHTML(node *html.Node) (mainText string, images []string) 
 		}
 
 		// Examine class attribute
-		class, found := getAttribute(nodeParent, "class")
-		if found {
-			if negative.MatchString(class) {
-				parents[nodeParent] -= 50
-				parents[nodeGrandParent] -= 25
-			} else if positive.MatchString(class) {
-				parents[nodeParent] += 25
-				parents[nodeGrandParent] += 12.5
-			}
-		}
+		examineAttributeScore("class", parents, nodeParent, nodeGrandParent)
 
 		// Examine id attribute
-		id, found := getAttribute(nodeParent, "id")
-		if found {
-			if negative.MatchString(id) {
-				parents[nodeParent] -= 50
-				parents[nodeGrandParent] -= 25
-			} else if positive.MatchString(id) {
-				parents[nodeParent] += 25
-				parents[nodeGrandParent] += 12.5
-			}
-		}
+		examineAttributeScore("id", parents, nodeParent, nodeGrandParent)
 
 		// Examine p tag length
 		if len(pNode.Data) > 10 {
@@ -88,15 +70,27 @@ func getMainContentFromHTML(node *html.Node) (mainText string, images []string) 
 		return "", nil
 	}
 
-	var textNodes = extractNodesFromMultipleParents(maxNodes, "p")
-	mainText = ""
+	mainText = extractTextFromNodes(maxNodes)
+	images = extractImagesFromNodes(maxNodes)
 
-	for _, textNode := range textNodes {
-		var nodeText = extractTextFromNode(textNode)
-		mainText += "\n" + nodeText
+	return mainText, images
+}
+
+func examineAttributeScore(attribute string, scoreDictionary map[*html.Node]float64, nodeParent *html.Node, nodeGrandParent *html.Node) {
+	attrValue, found := getAttribute(nodeParent, attribute)
+	if found {
+		if negative.MatchString(attrValue) {
+			scoreDictionary[nodeParent] -= 50
+			scoreDictionary[nodeGrandParent] -= 25
+		} else if positive.MatchString(attrValue) {
+			scoreDictionary[nodeParent] += 25
+			scoreDictionary[nodeGrandParent] += 12.5
+		}
 	}
+}
 
-	images = []string{}
+func extractImagesFromNodes(maxNodes []*html.Node) []string {
+	var images = []string{}
 
 	var imageNodes = extractNodesFromMultipleParents(maxNodes, "img")
 	for _, imageNode := range imageNodes {
@@ -106,7 +100,7 @@ func getMainContentFromHTML(node *html.Node) (mainText string, images []string) 
 		}
 	}
 
-	return mainText, images
+	return images
 }
 
 func extractNodesFromMultipleParents(nodes []*html.Node, tag string) []*html.Node {
@@ -166,6 +160,18 @@ func removeNodesFromNode(node *html.Node, nodeToRemove string) {
 	for _, nodeElement := range childrenToRemove {
 		node.RemoveChild(nodeElement)
 	}
+}
+
+func extractTextFromNodes(maxNodes []*html.Node) string {
+	var textNodes = extractNodesFromMultipleParents(maxNodes, "p")
+	var nodesText = ""
+
+	for _, textNode := range textNodes {
+		var nodeText = extractTextFromNode(textNode)
+		nodesText += "\n" + nodeText
+	}
+
+	return nodesText
 }
 
 func extractTextFromNode(node *html.Node) string {
@@ -293,7 +299,7 @@ func replaceBrs(htmlBody *html.Node) (*html.Node, error) {
 		}
 	}
 
-	return nil, errors.New("Error occured while parsing br nodes")
+	return nil, errors.New("Error occurred while parsing br nodes")
 }
 
 func filterNodes(htmlBody *html.Node) *html.Node {
