@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -9,7 +10,16 @@ import (
 func getContentSentences(content string) []string {
 	content = strings.Replace(content, "\n", ". ", -1)
 	var sentences = strings.Split(content, ". ")
-	return sentences
+
+	// filter invalid sentences
+	var validSentences = []string{}
+	for _, sentence := range sentences {
+		if strings.TrimSpace(sentence) != "" {
+			validSentences = append(validSentences, sentence)
+		}
+	}
+
+	return validSentences
 }
 
 // Naive method for splitting a text into paragraphs
@@ -21,8 +31,8 @@ func getContentParagraphs(content string) []string {
 // Caculate the intersection between 2 sentences
 func sentencesIntersectedWordsCount(sent1 string, sent2 string) float32 {
 	// split the sentence into words/tokens
-	var words1 = strings.Split(sent1, " ")
-	var words2 = strings.Split(sent2, " ")
+	var words1 = splitWordsToMap(sent1)
+	var words2 = splitWordsToMap(sent2)
 
 	// If there is not intersection, just return 0
 	if len(words1) == 0 && len(words2) == 0 {
@@ -30,47 +40,31 @@ func sentencesIntersectedWordsCount(sent1 string, sent2 string) float32 {
 	}
 
 	var intersectionCount = 0
-
-	var matchedWords = make(map[string]bool)
-	for _, word1 := range words1 {
-		if _, exists := matchedWords[word1]; exists {
-			continue
-		}
-
-		for _, word2 := range words2 {
-			if word1 != word2 {
-				continue
-			}
-
-			if _, exists := matchedWords[word2]; !exists {
-				intersectionCount++
-				matchedWords[word2] = true
-			}
-		}
-	}
-
-	for _, word2 := range words2 {
-		if _, exists := matchedWords[word2]; exists {
-			continue
-		}
-
-		for _, word1 := range words1 {
-			if word1 != word2 {
-				continue
-			}
-
-			if _, exists := matchedWords[word2]; !exists {
-				intersectionCount++
-				matchedWords[word2] = true
-			}
+	for word1 := range words1 {
+		var _, exists = words2[word1]
+		if exists {
+			intersectionCount++
 		}
 	}
 
 	// We normalize the result by the average number of words
-	var numerator = float32(len(matchedWords))
+	var numerator = float32(intersectionCount)
 	var denominator = float32((len(words1) + len(words2)) / 2)
 	var result = numerator / denominator
 	return result
+}
+
+// Split words from string into map object with words as keys and true as value to all
+func splitWordsToMap(text string) map[string]bool {
+	var words = strings.Split(text, " ")
+	var wordsMap = make(map[string]bool)
+	for _, word := range words {
+		if _, exists := wordsMap[word]; !exists {
+			wordsMap[word] = true
+		}
+	}
+
+	return wordsMap
 }
 
 // Format a sentence - remove all non-alphbetic chars from the sentence
@@ -80,9 +74,8 @@ func formatSentence(sentence string) string {
 	if err != nil {
 		return ""
 	}
-	var replacedSentence = regex.ReplaceAllString(sentence, "")
 
-	// sentence = re.sub(r'\W+', '', sentence)
+	var replacedSentence = regex.ReplaceAllString(sentence, "")
 	return replacedSentence
 }
 
@@ -95,10 +88,13 @@ func getSentencesRanks(content string) map[string]float32 {
 	var values = [][]float32{}
 
 	for i := 0; i < sentencesCount; i++ {
-
 		values = append(values, []float32{})
 		for j := 0; j < sentencesCount; j++ {
-			values[i] = append(values[i], sentencesIntersectedWordsCount(sentences[i], sentences[j]))
+			if i == j {
+				values[i] = append(values[i], 0)
+			} else {
+				values[i] = append(values[i], sentencesIntersectedWordsCount(sentences[i], sentences[j]))
+			}
 		}
 	}
 
@@ -134,7 +130,7 @@ func getBestSentence(paragraph string, sentencesDictionary map[string]float32) s
 
 	// Get the best sentence according to the sentences dictionary
 	var bestSentence = ""
-	var maxValue float32
+	var maxValue float32 = -1
 	for _, s := range sentences {
 		var trimmedSentence = formatSentence(s)
 		if trimmedSentence != "" && sentencesDictionary[trimmedSentence] > maxValue {
@@ -150,6 +146,9 @@ func getBestSentence(paragraph string, sentencesDictionary map[string]float32) s
 func GetSummary(content string) string {
 	// Build the sentences dictionary
 	var sentencesDictionary = getSentencesRanks(content)
+	for key, val := range sentencesDictionary {
+		fmt.Println("key: ", key, "; val: ", val)
+	}
 
 	// Split the content into paragraphs
 	var paragraphs = getContentParagraphs(content)

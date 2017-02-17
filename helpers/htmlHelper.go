@@ -168,7 +168,7 @@ func extractTextFromNodes(maxNodes []*html.Node) string {
 
 	for _, textNode := range textNodes {
 		var nodeText = extractTextFromNode(textNode)
-		nodesText += "\n" + nodeText
+		nodesText += "\n\n" + nodeText
 	}
 
 	return nodesText
