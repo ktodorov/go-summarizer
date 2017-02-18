@@ -34,7 +34,7 @@ func generateRandomFileName(path string, extension string) string {
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
-	var fullpath = path + "/" + string(b) + "." + extension
+	var fullpath = path + "\\" + string(b) + "." + extension
 	if !fileExists(fullpath) {
 		return fullpath
 	}
@@ -171,19 +171,24 @@ func saveToPDFFile(path string, title []byte, text []byte, imageURLs []string) (
 			return false, err
 		}
 
-		var floatImageHeight = float64(imageHeight)
-		var floatImageWidth = float64(imageWidth)
-		var imageProp = imageWidth / int(pageSizeWidth)
-		floatImageWidth = floatImageWidth / float64(imageProp+1)
-		floatImageHeight = floatImageHeight / float64(imageProp+1)
+		// Print the image only if its not some kind of icon below 50 px from both sides
+		if imageWidth+imageHeight > 50 {
+			var floatImageHeight = float64(imageHeight)
+			var floatImageWidth = float64(imageWidth)
+			var imageProp = imageWidth / int(pageSizeWidth)
+			floatImageWidth = floatImageWidth / float64(imageProp+1)
+			floatImageHeight = floatImageHeight / float64(imageProp+1)
 
-		if heightUsed+floatImageHeight > pageSizeHeight {
-			pdf.AddPage()
-			heightUsed = 0
+			if heightUsed+floatImageHeight > pageSizeHeight {
+				pdf.AddPage()
+				heightUsed = 0
+			}
+
+			if len(imagePaths) < 2 {
+				pdf.Image(imagePath, 0, heightUsed, &gopdf.Rect{H: floatImageHeight, W: floatImageWidth}) //print image
+				heightUsed += floatImageHeight
+			}
 		}
-
-		pdf.Image(imagePath, 0, heightUsed, &gopdf.Rect{H: floatImageHeight, W: floatImageWidth}) //print image
-		heightUsed += floatImageHeight
 
 		// save image file paths in order to delete them later
 		imagePaths = append(imagePaths, imagePath)

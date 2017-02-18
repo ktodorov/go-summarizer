@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 )
@@ -25,7 +24,16 @@ func getContentSentences(content string) []string {
 // Naive method for splitting a text into paragraphs
 func getContentParagraphs(content string) []string {
 	var paragraphs = strings.Split(content, "\n\n")
-	return paragraphs
+
+	// filter invalid paragraphs
+	var validParagraphs = []string{}
+	for _, paragraph := range paragraphs {
+		if strings.TrimSpace(paragraph) != "" {
+			validParagraphs = append(validParagraphs, paragraph)
+		}
+	}
+
+	return validParagraphs
 }
 
 // Caculate the intersection between 2 sentences
@@ -70,7 +78,7 @@ func splitWordsToMap(text string) map[string]bool {
 // Format a sentence - remove all non-alphbetic chars from the sentence
 // We'll use the formatted sentence as a key in our sentences dictionary
 func formatSentence(sentence string) string {
-	var regex, err = regexp.Compile("\\W+")
+	var regex, err = regexp.Compile("[^a-zA-Zа-яА-я]")
 	if err != nil {
 		return ""
 	}
@@ -146,9 +154,6 @@ func getBestSentence(paragraph string, sentencesDictionary map[string]float32) s
 func GetSummary(content string) string {
 	// Build the sentences dictionary
 	var sentencesDictionary = getSentencesRanks(content)
-	for key, val := range sentencesDictionary {
-		fmt.Println("key: ", key, "; val: ", val)
-	}
 
 	// Split the content into paragraphs
 	var paragraphs = getContentParagraphs(content)
@@ -163,6 +168,14 @@ func GetSummary(content string) string {
 		if sentence != "" {
 			summary = append(summary, sentence)
 		}
+	}
+
+	if len(summary) == 0 && len(sentencesDictionary) == len(paragraphs) && len(sentencesDictionary) > 1 {
+		// Then we have one sentence per paragraph
+		// This way we combine all sentences in one paragraph
+		var newContent = strings.Replace(content, "\n\n", " ", -1)
+		var result = GetSummary(newContent)
+		return result
 	}
 
 	var result = strings.Join(summary, "\n")

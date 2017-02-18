@@ -11,8 +11,8 @@ import (
 	"golang.org/x/net/html"
 )
 
-var negative, _ = regexp.Compile("/hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|modal|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|tool|widget/i,")
-var positive, _ = regexp.Compile("/article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story/i")
+var negative, _ = regexp.Compile("(hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|modal|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|tool|widget)")
+var positive, _ = regexp.Compile("(article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story)")
 
 func getAttribute(node *html.Node, attributeName string) (attributeValue string, found bool) {
 	var attributes = node.Attr
@@ -33,21 +33,22 @@ func getMainContentFromHTML(node *html.Node) (mainText string, images []string) 
 
 	for _, pNode := range pNodes {
 		var nodeParent = pNode.Parent
-		var nodeGrandParent = nodeParent.Parent
+		// var nodeGrandParent = nodeParent.Parent
 
 		if _, exists := parents[nodeParent]; !exists {
 			parents[nodeParent] = 0
 		}
 
-		if _, exists := parents[nodeGrandParent]; !exists {
-			parents[nodeGrandParent] = 0
-		}
+		// if _, exists := parents[nodeGrandParent]; !exists {
+		// 	parents[nodeGrandParent] = 0
+		// 	// examineTagScore(parents, nodeGrandParent)
+		// }
 
 		// Examine class attribute
-		examineAttributeScore("class", parents, nodeParent, nodeGrandParent)
+		examineAttributeScore("class", parents, nodeParent) //, nodeGrandParent)
 
 		// Examine id attribute
-		examineAttributeScore("id", parents, nodeParent, nodeGrandParent)
+		examineAttributeScore("id", parents, nodeParent) //, nodeGrandParent)
 
 		// Examine p tag length
 		if len(pNode.Data) > 10 {
@@ -61,6 +62,7 @@ func getMainContentFromHTML(node *html.Node) (mainText string, images []string) 
 	for key, value := range parents {
 		if value > maxValue {
 			maxNodes = []*html.Node{key}
+			maxValue = value
 		} else if value == maxValue {
 			maxNodes = append(maxNodes, key)
 		}
@@ -76,15 +78,18 @@ func getMainContentFromHTML(node *html.Node) (mainText string, images []string) 
 	return mainText, images
 }
 
-func examineAttributeScore(attribute string, scoreDictionary map[*html.Node]float64, nodeParent *html.Node, nodeGrandParent *html.Node) {
-	attrValue, found := getAttribute(nodeParent, attribute)
-	if found {
-		if negative.MatchString(attrValue) {
-			scoreDictionary[nodeParent] -= 50
-			scoreDictionary[nodeGrandParent] -= 25
-		} else if positive.MatchString(attrValue) {
-			scoreDictionary[nodeParent] += 25
-			scoreDictionary[nodeGrandParent] += 12.5
+func examineAttributeScore(attribute string, scoreDictionary map[*html.Node]float64, nodeParent *html.Node) { //, nodeGrandParent *html.Node) {
+	htmlAttrValue, found := getAttribute(nodeParent, attribute)
+	var attrValues = strings.Split(htmlAttrValue, " ")
+	for _, attrValue := range attrValues {
+		if found {
+			if negative.MatchString(attrValue) {
+				scoreDictionary[nodeParent] -= 50
+				// scoreDictionary[nodeGrandParent] -= 25
+			} else if positive.MatchString(attrValue) {
+				scoreDictionary[nodeParent] += 25
+				// scoreDictionary[nodeGrandParent] += 12.5
+			}
 		}
 	}
 }
@@ -266,17 +271,22 @@ func replaceBrs(htmlBody *html.Node) (*html.Node, error) {
 		}
 
 		var replaced = false
-		for brNode.NextSibling.Data == "br" {
+		var brSibling = brNode.NextSibling
+		for brSibling.Data == "br" {
 			replaced = true
-			var brSibling = brNode.NextSibling
-			brSibling.Parent.RemoveChild(brNode)
-			brNode = brSibling
+			var next = brSibling.NextSibling
+			if next == nil {
+				return htmlBody, nil
+			}
+
+			brSibling.Parent.RemoveChild(brSibling)
+			brSibling = next
 		}
 
 		if replaced {
-			var p = html.Node{Data: "p"}
+			var p = html.Node{Data: "p", Type: html.ElementNode}
 			htmlBody.InsertBefore(&p, brNode)
-			htmlBody.RemoveChild(brNode)
+			brNode.Parent.RemoveChild(brNode)
 
 			var next = p.NextSibling
 			for next != nil {
@@ -311,6 +321,7 @@ func filterNodes(htmlBody *html.Node) *html.Node {
 			// Then there is only text in this div
 			var newParagraph = html.Node{}
 			newParagraph.Data = "p"
+			newParagraph.Type = html.ElementNode
 			var copyParagraph = div.FirstChild
 			div.RemoveChild(copyParagraph)
 			newParagraph.AppendChild(copyParagraph)
@@ -361,7 +372,6 @@ func getMainInfoFromHTML(htmlString string) (string, string, []string, error) {
 	}
 
 	bn = filterNodes(bn)
-
 	var mainText, mainImages = getMainContentFromHTML(bn)
 	var title = getPageTitle(bn)
 

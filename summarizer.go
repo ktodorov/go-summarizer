@@ -50,6 +50,10 @@ func (s *Summarizer) Summarize() (string, error) {
 
 	s.summarizedText = summarizedText
 	s.summarized = true
+	if s.title != "" {
+		return s.title + "\n\n" + s.summarizedText, nil
+	}
+
 	return s.summarizedText, nil
 }
 
