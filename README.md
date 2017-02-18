@@ -29,13 +29,21 @@ This is a Go library for summarizing text and websites and optionally saving the
 
 	fmt.Println(summary)
 
-Output:
->The launch also resulted in a successful recovery of the Falcon 9 rocket’s first stage, which marks the seventh time SpaceX has succeed in landing this stage back for potential later re-use<br/>
->SpaceX also had to push back its timelines for test launches of its Dragon crew capsule as a result of the September incident<br/>
->All satellites were successfully deployed as of 11:13 AM PT / 2:12 PM PT, signalling a successful mission for the space company’s first flight back.<br/>
+Output*:
+>SpaceX successfully returns to launch with Iridium-1 NEXT Falcon 9 mission
+>
+>It’s a huge victory for SpaceX, which has had to delay its launch schedule since the explosion.
+>The launch also resulted in a successful recovery of the Falcon 9 rocket’s first stage, which marks the seventh time SpaceX has succeed in landing this stage back for potential later re-use
+>It’s also a green light for SpaceX in terms of the company pursuing its aggressive launch schedule, which is something the private launch provider needs to do in order to continue locking in new contracts and working towards its goal of decreasing the cost of launches even further still.
+>In 2016, SpaceX completed only 8 of a planned 20 launches, due to the September 1 explosion that halted all new launches for four months
+>SpaceX also had to push back its timelines for test launches of its Dragon crew capsule as a result of the September incident
+>It also sets the stage for SpaceX’s future goals of providing missions to Mars, with a target initial date for those aspirations still set for 2024.
+>All satellites were successfully deployed as of 11:13 AM PT / 2:12 PM PT, signalling a successful mission for the space company’s first flight back.
+
+_*Note that it first prints the title of the web page if there is such_
 
 ### GetSummaryInfo
-    var s = CreateFromText("test")
+    var s = CreateFromText("first sentence. second sentence")
 	s.Summarize()
 	summaryInfo, err := s.GetSummaryInfo()
 	if err != nil {
@@ -45,13 +53,13 @@ Output:
 	fmt.Println(summaryInfo)
 
 Output:
->Summary info:<br/>
-> \- Original length: 4<br/>
-> \- Summary length:  0<br/>
-> \- Summary ratio:   100<br/>
+>Summary info: <br/>
+> \- Original length: 31 symbols <br/>
+> \- Summary length:  14 symbols <br/>
+> \- Summary ratio:   54.84% <br/>
 
 ### IsSummarized
-    var s = CreateFromText("test")
+    var s = CreateFromText("first sentence. second sentence")
 	fmt.Println("Before summarizing: ", s.IsSummarized())
 	s.Summarize()
 	fmt.Println("After summarizing: ", s.IsSummarized())
@@ -61,7 +69,7 @@ Output:
 > After summarizing: true<br/>
 
 ### StoreToFile
-    var s = CreateFromText("test")
+    var s = CreateFromText("first sentence. second sentence")
 	s.Summarize()
 	stored, err := s.StoreToFile("some/path/to/file.txt")
 	if err != nil {
@@ -72,3 +80,5 @@ Output:
 
 Output:
 > true
+
+_*Currently supported file types: txt and pdf_
