@@ -20,6 +20,7 @@ import (
 
 var supportedFileTypes = []string{"txt", "pdf"}
 
+// io.TempFile
 func getProgramRootPath() (string, error) {
 	_, b, _, _ := runtime.Caller(0)
 	basepath := filepath.Dir(filepath.Dir(b))
@@ -161,14 +162,14 @@ func saveToPDFFile(path string, title []byte, text []byte, imageURLs []string) (
 		var imagePath = generateRandomFileName(abspath, imageExtension)
 		err := saveImageFromURL(imageURL, imagePath)
 		if err != nil {
-			return false, err
+			continue
 		}
 
 		// Check if image will leave the page.
 		// If thats the case, add new page and start from 0 there
 		imageWidth, imageHeight, err := getImageDimension(imagePath)
 		if err != nil {
-			return false, err
+			continue
 		}
 
 		// Print the image only if its not some kind of icon below 50 px from both sides

@@ -29,10 +29,14 @@ func readFromReader(reader io.Reader) ([]byte, error) {
 func saveImageFromURL(imageURL string, imagePath string) error {
 	// don't worry about errors
 	response, e := http.Get(imageURL)
+
+	if response != nil && response.Body != nil {
+		defer response.Body.Close()
+	}
+
 	if e != nil {
 		return e
 	}
-	defer response.Body.Close()
 
 	//open a file for writing
 	file, err := os.Create(imagePath)

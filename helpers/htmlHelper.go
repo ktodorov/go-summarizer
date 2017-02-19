@@ -272,7 +272,7 @@ func replaceBrs(htmlBody *html.Node) (*html.Node, error) {
 
 		var replaced = false
 		var brSibling = brNode.NextSibling
-		for brSibling.Data == "br" {
+		for brSibling != nil && brSibling.Data == "br" {
 			replaced = true
 			var next = brSibling.NextSibling
 			if next == nil {
